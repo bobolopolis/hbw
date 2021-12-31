@@ -1,0 +1,167 @@
+#!/usr/bin/env python3
+#
+# Copyright 2021 Robert Joslyn
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+'''
+Wrapper around HandBrakeCLI to make bulk transcoding easier.
+'''
+
+import argparse
+import subprocess
+import yaml
+
+
+valid_keys = ['input', 'title',
+              'output', 'markers',
+              'encoder', 'encoder-preset', 'quality', 'vfr', 'encopts',
+              'audio', 'aencoder', 'mixdown', 'aname', 'ab', 'arate',
+              'auto-anamorphic',
+              'deinterlace', 'decomb', 'grayscale',
+              'all-subtitles']
+
+
+def copy_valid_keys(config, flat_map):
+    '''Copy any valid top level keys from config to flat_map.'''
+    for key in config:
+        if key in valid_keys:
+            flat_map[key] = config[key]
+
+
+def map_to_hb(opts):
+    '''Convert a map key-value pair to a HandBrake CLI flag'''
+
+    command = []
+
+    # Source Options
+    if 'input' in opts:
+        command.extend(['--input', f'{opts["input"]}'])
+    if 'title' in opts:
+        command.extend(['--title', f'{opts["title"]}'])
+
+    # Destination Options
+    if 'output' in opts:
+        command.extend(['--output', f'{opts["output"]}'])
+    if 'markers' in opts:
+        command.append('--markers')
+
+    # Video Options
+    if 'encoder' in opts:
+        command.extend(['--encoder', f'{opts["encoder"]}'])
+
+    if 'encoder-preset' in opts:
+        command.extend(['--encoder-preset', f'{opts["encoder-preset"]}'])
+    if 'quality' in opts:
+        command.extend(['--quality', f'{opts["quality"]}'])
+    if 'vfr' in opts:
+        command.append('--vfr')
+    if 'encopts' in opts:
+        command.extend(['--encopts', f'{opts["encopts"]}'])
+
+    # Audio Options
+    if 'audio' in opts:
+        command.extend(['--audio', f'{opts["audio"]}'])
+    if 'aencoder' in opts:
+        command.extend(['--aencoder', f'{opts["aencoder"]}'])
+    if 'mixdown' in opts:
+        command.extend(['--mixdown', f'{opts["mixdown"]}'])
+    if 'aname' in opts:
+        command.extend(['--aname', f'{opts["aname"]}'])
+    if 'ab' in opts:
+        command.extend(['--ab', f'{opts["ab"]}'])
+    if 'arate' in opts:
+        command.extend(['--arate', f'{opts["arate"]}'])
+
+    # Picture Options
+    if 'auto-anamorphic' in opts:
+        command.append('--auto-anamorphic')
+
+    # Filter Options
+    if 'deinterlace' in opts:
+        command.append('--deinterlace')
+    if 'decomb' in opts:
+        command.append('--decomb')
+    if 'grayscale' in opts:
+        command.append('--grayscale')
+
+    # Subtitle Options
+    if 'all-subtitles' in opts:
+        command.append('--all-subtitles')
+
+    return command
+
+
+def call_handbrake(opts, pretend):
+    '''Call HandBrakeCLI'''
+
+    command = ['HandBrakeCLI']
+    command.extend(map_to_hb(opts))
+
+    if pretend:
+        cmd = ''
+        for opt in command:
+            cmd += f' {opt}'
+        print(f'Command that would be called:{cmd}')
+        return
+
+    # TODO validate options
+
+    log='log'
+    with open(log, 'a+', encoding='utf8') as log_file:
+        subprocess.run(command, stdout=log_file, stderr=subprocess.STDOUT,
+                       check=True)
+    return
+
+
+def parse_yaml(yaml_file, scan, pretend):
+    '''Parse the YAML config file'''
+
+    config = {}
+    inputs = {}
+
+    with open(yaml_file, 'r', encoding='utf8') as file:
+        config = yaml.safe_load(file)
+
+    if 'inputs' not in config:
+        print('Missing inputs')
+        return False
+
+    global_opts = {}
+    copy_valid_keys(config, global_opts)
+
+    inputs = config['inputs']
+
+    for inp in inputs:
+        if scan:
+            iso=f'{inp["input"]}'
+            scan=f'{inp["input"]}.scan'
+            print(f'Scanning {iso}')
+            with open(scan, 'w', encoding='utf8') as scan_file:
+                subprocess.run(['HandBrakeCLI', '-i', iso, '--scan',
+                                '--title', '0'], stdout=scan_file,
+                               stderr=subprocess.STDOUT, check=True)
+            print(f'Scan output written to {scan}')
+            continue
+        if 'titles' not in inp:
+            print('Missing titles')
+            return False
+        for title in inp['titles']:
+            title_opts = global_opts.copy()
+            title_opts['input'] = inp['input']
+            copy_valid_keys(title, title_opts)
+            call_handbrake(title_opts, pretend)
+
+    return True
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Wrapper for transcoding with HandBrake')
+    parser.add_argument('file', help='YAML configuration file')
+    parser.add_argument('-s', '--scan',
+                        help='Scan inputs rather than transcode',
+                        action='store_true')
+    parser.add_argument('-p', '--pretend',
+                        help='Print the HandBrake commands that would be run',
+                        action='store_true')
+    args = parser.parse_args()
+    parse_yaml(args.file, args.scan, args.pretend)
