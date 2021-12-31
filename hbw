@@ -155,10 +155,10 @@ def parse_yaml(yaml_file, scan, pretend):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Wrapper for transcoding with HandBrake')
+    parser = argparse.ArgumentParser(description='Wrapper for transcoding with HandBrake. HandBrakeCLI output is written to "log" in the same directory as ghb.')
     parser.add_argument('file', help='YAML configuration file')
     parser.add_argument('-s', '--scan',
-                        help='Scan inputs rather than transcode',
+                        help='Scan inputs rather than transcode. Scan result is written to <path_of_input>.scan',
                         action='store_true')
     parser.add_argument('-p', '--pretend',
                         help='Print the HandBrake commands that would be run',
