@@ -14,7 +14,7 @@ import yaml
 
 valid_keys = ['input', 'title',
               'output', 'markers',
-              'encoder', 'encoder-preset', 'quality', 'vfr', 'encopts',
+              'encoder', 'encoder-preset', 'encopts', 'quality', 'vb', 'two-pass', 'vfr',
               'audio', 'aencoder', 'mixdown', 'aname', 'ab', 'arate',
               'auto-anamorphic',
               'deinterlace', 'decomb', 'grayscale',
@@ -48,15 +48,18 @@ def map_to_hb(opts):
     # Video Options
     if 'encoder' in opts:
         command.extend(['--encoder', f'{opts["encoder"]}'])
-
     if 'encoder-preset' in opts:
         command.extend(['--encoder-preset', f'{opts["encoder-preset"]}'])
-    if 'quality' in opts:
-        command.extend(['--quality', f'{opts["quality"]}'])
-    if 'vfr' in opts:
-        command.append('--vfr')
     if 'encopts' in opts:
         command.extend(['--encopts', f'{opts["encopts"]}'])
+    if 'quality' in opts:
+        command.extend(['--quality', f'{opts["quality"]}'])
+    if 'vb' in opts:
+        command.extend(['--vb', f'{opts["vb"]}'])
+    if 'two-pass' in opts:
+        command.append('--two-pass')
+    if 'vfr' in opts:
+        command.append('--vfr')
 
     # Audio Options
     if 'audio' in opts:
