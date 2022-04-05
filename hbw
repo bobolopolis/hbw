@@ -10,6 +10,7 @@ Wrapper around HandBrakeCLI to make bulk transcoding easier.
 import argparse
 import subprocess
 import yaml
+from pathlib import Path
 
 
 valid_keys = ['input', 'title',
@@ -109,8 +110,14 @@ def call_handbrake(opts, pretend):
 
     # TODO validate options
 
+    # Create output directory
+    out_dir = Path(opts["output"]).parent
+    mkdir = ["mkdir", "-p", str(out_dir)]
+
     log='log'
     with open(log, 'a+', encoding='utf8') as log_file:
+        subprocess.run(mkdir, stdout=log_file, stderr=subprocess.STDOUT,
+                       check=True)
         subprocess.run(command, stdout=log_file, stderr=subprocess.STDOUT,
                        check=True)
     return
