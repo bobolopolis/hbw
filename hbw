@@ -13,7 +13,8 @@ import yaml
 from pathlib import Path
 
 
-valid_keys = ['input', 'title',
+valid_keys = ['preset',
+              'input', 'title',
               'output', 'markers',
               'encoder', 'encoder-preset', 'encopts', 'quality', 'vb', 'two-pass', 'vfr',
               'audio', 'aencoder', 'mixdown', 'aname', 'ab', 'arate',
@@ -33,6 +34,10 @@ def map_to_hb(opts):
     '''Convert a map key-value pair to a HandBrake CLI flag'''
 
     command = []
+
+    # General Options
+    if 'preset' in opts:
+        command.extend(['--preset', f'{opts["preset"]}'])
 
     # Source Options
     if 'input' in opts:
