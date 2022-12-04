@@ -20,7 +20,8 @@ valid_keys = ['preset',
               'audio', 'aencoder', 'mixdown', 'aname', 'ab', 'arate',
               'auto-anamorphic',
               'deinterlace', 'decomb', 'grayscale',
-              'all-subtitles', 'subtitle', 'subname', 'native-language', 'subtitle-burned']
+              'all-subtitles', 'subtitle', 'subname', 'native-language', 'subtitle-burned',
+              'workdir']
 
 
 def copy_valid_keys(config, flat_map):
@@ -154,7 +155,13 @@ def parse_yaml(yaml_file, scan, pretend):
 
     inputs = config['inputs']
 
+    if 'workdir' in config:
+        workdir = config['workdir']
+    else:
+        workdir = ''
+
     for inp in inputs:
+        inp['input'] = f'{workdir}/{inp["input"]}'
         if scan:
             iso=f'{inp["input"]}'
             scan=f'{inp["input"]}.scan'
