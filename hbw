@@ -20,7 +20,7 @@ valid_keys = ['preset',
               'audio', 'aencoder', 'mixdown', 'aname', 'ab', 'arate',
               'auto-anamorphic',
               'deinterlace', 'decomb', 'grayscale',
-              'all-subtitles']
+              'all-subtitles', 'subtitle', 'subname', 'native-language', 'subtitle-burned']
 
 
 def copy_valid_keys(config, flat_map):
@@ -96,6 +96,14 @@ def map_to_hb(opts):
     # Subtitle Options
     if 'all-subtitles' in opts:
         command.append('--all-subtitles')
+    if 'subtitle' in opts:
+        command.extend(['--subtitle', f'{opts["subtitle"]}'])
+    if 'subname' in opts:
+        command.extend(['--subname', f'{opts["subname"]}'])
+    if 'native-language' in opts:
+        command.extend(['--native-language', f'{opts["native-language"]}'])
+    if 'subtitle-burned' in opts:
+        command.extend(['--subtitle-burned', f'{opts["subtitle-burned"]}'])
 
     return command
 
