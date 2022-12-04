@@ -109,7 +109,7 @@ def map_to_hb(opts):
     return command
 
 
-def call_handbrake(opts, pretend):
+def call_handbrake(opts, pretend, log):
     '''Call HandBrakeCLI'''
 
     command = ['HandBrakeCLI']
@@ -128,16 +128,22 @@ def call_handbrake(opts, pretend):
     out_dir = Path(opts["output"]).parent
     mkdir = ["mkdir", "-p", str(out_dir)]
 
-    log='log'
-    with open(log, 'a+', encoding='utf8') as log_file:
-        subprocess.run(mkdir, stdout=log_file, stderr=subprocess.STDOUT,
+    if log is not None:
+        with open(log, 'a+', encoding='utf8') as log_file:
+            subprocess.run(mkdir, stdout=log_file, stderr=subprocess.STDOUT,
+                           check=True)
+            subprocess.run(command, stdout=log_file, stderr=subprocess.STDOUT,
+                           check=True)
+    else:
+        subprocess.run(mkdir, stderr=subprocess.STDOUT,
                        check=True)
-        subprocess.run(command, stdout=log_file, stderr=subprocess.STDOUT,
+        subprocess.run(command, stderr=subprocess.STDOUT,
                        check=True)
+
     return
 
 
-def parse_yaml(yaml_file, scan, pretend):
+def parse_yaml(yaml_file, scan, pretend, log):
     '''Parse the YAML config file'''
 
     config = {}
@@ -178,14 +184,15 @@ def parse_yaml(yaml_file, scan, pretend):
         for title in inp['titles']:
             title_opts = global_opts.copy()
             title_opts['input'] = inp['input']
+            title['output'] = f'{workdir}/{title["output"]}'
             copy_valid_keys(title, title_opts)
-            call_handbrake(title_opts, pretend)
+            call_handbrake(title_opts, pretend, log)
 
     return True
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Wrapper for transcoding with HandBrake. HandBrakeCLI output is written to "log" in the same directory as ghb.')
+    parser = argparse.ArgumentParser(description='Wrapper for transcoding with HandBrake.')
     parser.add_argument('file', help='YAML configuration file')
     parser.add_argument('-s', '--scan',
                         help='Scan inputs rather than transcode. Scan result is written to <path_of_input>.scan',
@@ -193,5 +200,7 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--pretend',
                         help='Print the HandBrake commands that would be run',
                         action='store_true')
+    parser.add_argument('-l', '--log',
+                        help='Log file for HandBrake output. If not provided, output is written to stdout.')
     args = parser.parse_args()
-    parse_yaml(args.file, args.scan, args.pretend)
+    parse_yaml(args.file, args.scan, args.pretend, args.log)
