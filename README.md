@@ -16,7 +16,41 @@ optional arguments:
   -p, --pretend  Print the HandBrake commands that would be run
 ```
 
-Example configuration file:
+Example configuration file using HandBrake preset:
+```
+#YAML 1.2
+---
+version: 0
+# General Options
+preset: "VP9 MKV 1080p30"
+
+inputs:
+  - input: "/path/to/file.iso"
+    titles:
+      - title: 3
+        output: "/output/out1.mkv"
+      - title: 4
+        output: "/output/out2.mkv"
+        grayscale: true
+      - title: 6
+        output: "/output/out3.mkv"
+	audio: "1,2"
+	aname: "English,Commentary"
+  - input: "/path/to/source/dir"
+    titles:
+      - title: 3
+        output: "/output/out4.mkv"
+      - title: 5
+        output: "/output/out5.mkv"
+        grayscale: true
+      - title: 7
+        output: "/output/out6.mkv"
+	audio: "1,2"
+	aname: "English,Commentary"
+
+```
+
+Example configuration file with custom parameters:
 
 ```
 #YAML 1.2
