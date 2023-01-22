@@ -8,9 +8,10 @@ Wrapper around HandBrakeCLI to make bulk transcoding easier.
 '''
 
 import argparse
+import pathlib
 import subprocess
+
 import yaml
-from pathlib import Path
 
 
 valid_keys = ['preset', 'no-dvdnav',
@@ -113,7 +114,7 @@ def map_to_hb(opts):
     return command
 
 
-def call_handbrake(opts, pretend, log):
+def call_handbrake(opts, pretend, log, overwrite):
     '''Call HandBrakeCLI'''
 
     command = ['HandBrakeCLI']
@@ -126,10 +127,14 @@ def call_handbrake(opts, pretend, log):
         print(f'Command that would be called:{cmd}')
         return
 
-    # TODO validate options
+    # If output file already exists, skip
+    out_file = pathlib.Path(opts['output'])
+    if out_file.is_file() and not overwrite:
+        print(f'Output file already exists, skipping {out_file}')
+        return
 
     # Create output directory
-    out_dir = Path(opts["output"]).parent
+    out_dir = out_file.parent
     mkdir = ["mkdir", "-p", str(out_dir)]
 
     if log is not None:
@@ -147,13 +152,13 @@ def call_handbrake(opts, pretend, log):
     return
 
 
-def parse_yaml(yaml_file, scan, pretend, log):
+def parse_yaml(args):
     '''Parse the YAML config file'''
 
     config = {}
     inputs = {}
 
-    with open(yaml_file, 'r', encoding='utf8') as file:
+    with open(args.file, 'r', encoding='utf8') as file:
         config = yaml.safe_load(file)
 
     if 'inputs' not in config:
@@ -172,15 +177,15 @@ def parse_yaml(yaml_file, scan, pretend, log):
 
     for inp in inputs:
         inp['input'] = f'{workdir}/{inp["input"]}'
-        if scan:
+        if args.scan:
             iso=f'{inp["input"]}'
-            scan=f'{inp["input"]}.scan'
+            scan_ofile=f'{inp["input"]}.scan'
             print(f'Scanning {iso}')
-            with open(scan, 'w', encoding='utf8') as scan_file:
+            with open(scan_ofile, 'w', encoding='utf8') as scan_file:
                 subprocess.run(['HandBrakeCLI', '-i', iso, '--scan',
                                 '--title', '0'], stdout=scan_file,
                                stderr=subprocess.STDOUT, check=True)
-            print(f'Scan output written to {scan}')
+            print(f'Scan output written to {scan_ofile}')
             continue
         if 'titles' not in inp:
             print('Missing titles')
@@ -190,12 +195,14 @@ def parse_yaml(yaml_file, scan, pretend, log):
             title_opts['input'] = inp['input']
             title['output'] = f'{workdir}/{title["output"]}'
             copy_valid_keys(title, title_opts)
-            call_handbrake(title_opts, pretend, log)
+            call_handbrake(title_opts, args.pretend, args.log, args.overwrite)
 
     return True
 
 
-if __name__ == '__main__':
+def main():
+    '''Parse CLI options'''
+
     parser = argparse.ArgumentParser(description='Wrapper for transcoding with HandBrake.')
     parser.add_argument('file', help='YAML configuration file')
     parser.add_argument('-s', '--scan',
@@ -206,5 +213,11 @@ if __name__ == '__main__':
                         action='store_true')
     parser.add_argument('-l', '--log',
                         help='Log file for HandBrake output. If not provided, output is written to stdout.')
+    parser.add_argument('-o', '--overwrite',
+                        help='Overwrite existing files rather than skipping.')
     args = parser.parse_args()
-    parse_yaml(args.file, args.scan, args.pretend, args.log)
+    parse_yaml(args)
+
+
+if __name__ == '__main__':
+    main()
