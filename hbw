@@ -18,7 +18,7 @@ valid_keys = ['preset', 'no-dvdnav',
               'output', 'markers',
               'encoder', 'encoder-preset', 'encopts', 'quality', 'vb', 'two-pass', 'vfr',
               'audio', 'aencoder', 'mixdown', 'aname', 'ab', 'arate',
-              'auto-anamorphic',
+              'crop', 'auto-anamorphic',
               'deinterlace', 'decomb', 'grayscale',
               'all-subtitles', 'subtitle', 'subname', 'native-language', 'subtitle-burned',
               'workdir']
@@ -85,6 +85,8 @@ def map_to_hb(opts):
         command.extend(['--arate', f'{opts["arate"]}'])
 
     # Picture Options
+    if 'crop' in opts:
+        command.append(f'{opts["crop"]}')
     if 'auto-anamorphic' in opts:
         command.append('--auto-anamorphic')
 
