@@ -13,7 +13,7 @@ import yaml
 from pathlib import Path
 
 
-valid_keys = ['preset',
+valid_keys = ['preset', 'no-dvdnav',
               'input', 'title',
               'output', 'markers',
               'encoder', 'encoder-preset', 'encopts', 'quality', 'vb', 'two-pass', 'vfr',
@@ -39,6 +39,8 @@ def map_to_hb(opts):
     # General Options
     if 'preset' in opts:
         command.extend(['--preset', f'{opts["preset"]}'])
+    if 'no-dvdnav' in opts:
+        command.append('--no-dvdnav')
 
     # Source Options
     if 'input' in opts:
